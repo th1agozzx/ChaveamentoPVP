@@ -490,6 +490,29 @@ function renderClassificacao() {
 
 
 /* ===================================================
+   PDF — impressão otimizada via window.print()
+   =================================================== */
+
+/**
+ * Oculta os botões de controle, aciona window.print() e restaura.
+ * O navegador abre o diálogo de impressão; o usuário escolhe
+ * "Salvar como PDF" na impressora de destino.
+ */
+function salvarPDF() {
+  /* Esconde controles que não devem aparecer no PDF */
+  const controls   = document.querySelector('.controls');
+  const themeBtn   = document.querySelector('.theme-toggle');
+  if (controls)  controls.style.display = 'none';
+  if (themeBtn)  themeBtn.style.display = 'none';
+
+  window.print();
+
+  /* Restaura após o diálogo fechar */
+  if (controls)  controls.style.display = '';
+  if (themeBtn)  themeBtn.style.display = '';
+}
+
+/* ===================================================
    DOWNLOAD — salva o HTML atual como arquivo
    =================================================== */
 
@@ -551,8 +574,10 @@ async function baixarPagina() {
 document.addEventListener('DOMContentLoaded', () => {
   const btnSortear  = document.getElementById('btn-sortear');
   const btnDownload = document.getElementById('btn-download');
+  const btnPdf      = document.getElementById('btn-pdf');
   if (btnSortear)  btnSortear.addEventListener('click', sortear);
   if (btnDownload) btnDownload.addEventListener('click', baixarPagina);
+  if (btnPdf)      btnPdf.addEventListener('click', salvarPDF);
 
   // Primeiro sorteio automático
   sortear();

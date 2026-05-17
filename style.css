@@ -884,3 +884,27 @@ body::after {
   .grupos-grid { grid-template-columns: repeat(4, 1fr); }
   .pontuacao-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* ===== PRINT / PDF ===== */
+@media print {
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+  body { background: #0a0a0a !important; color: #f0e8e0 !important; }
+  body::before, body::after { display: none; }
+
+  .controls, .theme-toggle { display: none !important; }
+
+  .page { max-width: 100%; padding: 12px; }
+
+  .mata-mata { overflow: visible; flex-wrap: wrap; }
+
+  .grupos-grid { grid-template-columns: repeat(4, 1fr); }
+  .pontuacao-grid { grid-template-columns: repeat(4, 1fr); }
+
+  .grupo-card, .pont-card, .match-box, .prize-card,
+  .classif-card, .terceiro-box {
+    break-inside: avoid;
+  }
+
+  hr.divider { border-color: #2a2a2a; }
+}
