@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chaveamento 3v3 — RioRise RP PVP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Barlow+Condensed:ital,wght@0,400;0,500;0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- BOTÃO DE TEMA (React monta aqui) -->
+  <div id="root-theme-toggle"></div>
+
+  <div class="page">
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="header-eyebrow">RioRise Roleplay</div>
+      <div class="header-logo">
+        <span class="rp">RP</span><span class="pvp"> PVP</span>
+      </div>
+      <div class="header-divider">
+        <span class="header-divider-text">Evento de</span>
+      </div>
+      <div class="header-subtitle">Chaveamento 3v3</div>
+    </div>
+
+    <!-- PRIZES -->
+    <div class="prizes">
+      <div class="prize-card p1">
+        <div class="prize-place">1º Lugar</div>
+        <div class="prize-val">100K</div>
+      </div>
+      <div class="prize-card p2">
+        <div class="prize-place">2º Lugar</div>
+        <div class="prize-val">60K</div>
+      </div>
+      <div class="prize-card p3">
+        <div class="prize-place">3º Lugar</div>
+        <div class="prize-val">40K</div>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="controls">
+      <button class="btn" id="btn-sortear">&#8635; Novo Sorteio</button>
+      <button class="btn" onclick="window.print()">&#9113; Imprimir</button>
+    </div>
+
+    <!-- FASE DE GRUPOS -->
+    <div class="sec-title">Fase de Grupos</div>
+    <div class="grupos-grid" id="grupos-grid"></div>
+
+    <hr class="divider">
+
+    <!-- TABELA DE PONTUAÇÃO -->
+    <div class="sec-title">Tabela de Pontuação</div>
+
+    <div class="regras-pontos">
+      <div class="regra-badge"><span class="regra-pts">3</span> pts — Vitória</div>
+      <div class="regra-badge"><span class="regra-pts" style="color:var(--text3)">0</span> pts — Derrota</div>
+      <div class="regra-badge" style="font-size:11px;">Desempate: confronto direto → saldo de kills</div>
+    </div>
+
+    <div class="pontuacao-grid" id="pontuacao-grid"></div>
+
+    <hr class="divider">
+
+    <!-- MATA-MATA -->
+    <div class="sec-title">Mata-Mata — Quartas · Semi · Final</div>
+    <div class="mata-mata" id="mata-mata"></div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gA)"></div> Grupo A</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gB)"></div> Grupo B</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gC)"></div> Grupo C</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gD)"></div> Grupo D</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold)"></div> 1º avança</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--silver)"></div> 2º avança</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--border)"></div> 3º eliminado</div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="footer-text">Patrocinado por: <span>EQP Amorim</span> &amp; <span>PIVA</span></div>
+    </div>
+
+  </div><!-- /.page -->
+
+  <!-- React (CDN) para o ThemeToggle -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- JavaScript principal -->
+  <script src="app.js"></script>
+
+  <!-- Componente React do ThemeToggle (inline porque precisa do Babel) -->
+  <script type="text/babel">
+    const { useState } = React;
+
+    function ThemeToggle() {
+      const [isDark, setIsDark] = useState(
+        document.documentElement.getAttribute('data-theme') === 'dark'
+      );
+
+      const toggle = () => {
+        const next = isDark ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        setIsDark(!isDark);
+      };
+
+      return (
+        <button className="theme-toggle" onClick={toggle}>
+          {isDark ? '☀ Tema' : '☾ Tema'}
+        </button>
+      );
+    }
+
+    const rootEl = document.getElementById('root-theme-toggle');
+    ReactDOM.createRoot(rootEl).render(<ThemeToggle />);
+  </script>
+
+</body>
+</html>
