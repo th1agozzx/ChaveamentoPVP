@@ -309,10 +309,10 @@ function renderMata(grupos) {
 
   /* Quartas de Final */
   const qMatches = [
-    makeMatch('1º Grupo A', 'tA', '2º Grupo B', 'tB'),
-    makeMatch('1º Grupo B', 'tB', '2º Grupo A', 'tA'),
-    makeMatch('1º Grupo C', 'tC', '2º Grupo D', 'tD'),
-    makeMatch('1º Grupo D', 'tD', '2º Grupo C', 'tC'),
+    makeMatch('1º Grupo A', 'tA', '1º Grupo B', 'tB'),
+    makeMatch('2º Grupo A', 'tB', '2º Grupo B', 'tA'),
+    makeMatch('1º Grupo C', 'tC', '1º Grupo D', 'tD'),
+    makeMatch('2º Grupo C', 'tD', '2º Grupo D', 'tC'),
   ];
   mm.appendChild(makeRound('Quartas de Final', qMatches));
   mm.appendChild(makeConn(4));
