@@ -182,26 +182,55 @@ function renderPontuacao(grupos) {
 }
 
 /**
- * Recalcula e exibe os pontos (V × 3) ao editar um input.
+ * Recalcula pontos (V × 3) e reordena as linhas do grupo por pontuação.
  * Chamado via oninput inline nos inputs gerados.
  * @param {HTMLInputElement} input
  */
 function calcPts(input) {
-  const tr        = input.closest('tr');
-  const tbody     = tr.parentElement;
-  const pontCard  = tr.closest('.pont-card');
-  const gi        = Array.from(document.querySelectorAll('.pont-card')).indexOf(pontCard);
-  const ri        = Array.from(tbody.children).indexOf(tr);
-  const cells     = tr.querySelectorAll('input');
+  const tr       = input.closest('tr');
+  const tbody    = tr.parentElement;
+  const pontCard = tr.closest('.pont-card');
+  const gi       = Array.from(document.querySelectorAll('.pont-card')).indexOf(pontCard);
 
-  /* Colunas: J=0, V=1, D=2  →  Pts = V × 3 */
-  const v   = parseInt(cells[1].value) || 0;
-  const pts = v * 3;
+  /* Recalcula pontos de cada linha */
+  const rows = Array.from(tbody.children);
+  rows.forEach((row, ri) => {
+    const cells   = row.querySelectorAll('input');
+    const v       = parseInt(cells[1].value) || 0;
+    const hasData = cells[0].value !== '' || cells[1].value !== '';
+    const pts     = hasData ? v * 3 : null;
 
-  const ptsCel = document.getElementById('pts-' + gi + '-' + ri);
-  if (ptsCel) {
-    ptsCel.textContent =
-      cells[1].value === '' && cells[0].value === '' ? '—' : pts;
+    const ptsCel = document.getElementById('pts-' + gi + '-' + ri);
+    if (ptsCel) ptsCel.textContent = pts !== null ? pts : '—';
+
+    /* guarda pts no dataset para ordenação */
+    row.dataset.pts = pts !== null ? pts : -1;
+  });
+
+  /* Reordena linhas por pontos (maior primeiro), estável */
+  const sorted = [...rows].sort((a, b) => {
+    const pA = parseInt(a.dataset.pts);
+    const pB = parseInt(b.dataset.pts);
+    if (pA === -1 && pB === -1) return 0;
+    if (pA === -1) return 1;
+    if (pB === -1) return -1;
+    return pB - pA;
+  });
+
+  /* Só move se a ordem mudou */
+  const changed = sorted.some((row, i) => row !== rows[i]);
+  if (changed) {
+    sorted.forEach(row => tbody.appendChild(row));
+
+    /* Atualiza classes e badges de posição */
+    Array.from(tbody.children).forEach((row, i) => {
+      row.className = 'row-' + (i + 1);
+      const badge = row.querySelector('.pos-badge');
+      if (badge) {
+        badge.className = 'pos-badge ' + ['pos-1', 'pos-2', 'pos-3'][i];
+        badge.textContent = ['1°', '2°', '3°'][i];
+      }
+    });
   }
 }
 
@@ -340,7 +369,7 @@ function makeConn(fromCount, toCount) {
 
 /**
  * Renderiza o bracket de mata-mata:
- * Quartas → [conn] → Final/Troféu → [conn] → Semi → [conn] → Campeão
+ * Quartas → [conn] → Semi → [conn] → Final → [conn] → Campeão
  * @param {string[][]} grupos
  */
 function renderMata(grupos) {
@@ -363,7 +392,6 @@ function renderMata(grupos) {
     makeMatch('Perd. Q1/Q2', 'tX', 'Perd. Q3/Q4', 'tX'),
   ];
   const semiCol = makeRound('Semifinal', sMatches);
-  /* Pequena nota na segunda partida */
   const semiNote = document.createElement('div');
   semiNote.style.cssText = 'font-size:9px;letter-spacing:1.5px;color:var(--bronze);text-align:center;margin-top:-12px;margin-bottom:4px;font-family:"Rajdhani",sans-serif;font-weight:700;';
   semiNote.textContent = '▲ DISPUTA 3° LUGAR';
@@ -382,9 +410,30 @@ function renderMata(grupos) {
   mm.appendChild(trophyCol);
   mm.appendChild(makeConn(1, 1));
 
-  /* ── Campeão ── */
-  const fMatch = [makeMatch('Venc. Semi 1', 'tX', 'Venc. Semi 2', 'tX', true)];
-  mm.appendChild(makeRound('Campeão', fMatch));
+  /* ── Tabela Final (sem label "Campeão" em cima) ── */
+  const finalMatch = [makeMatch('Venc. Semi 1', 'tX', 'Venc. Semi 2', 'tX', true)];
+  const finalCol = document.createElement('div');
+  finalCol.className = 'round-col';
+  /* Espaçador vazio no lugar do label para manter alinhamento vertical */
+  const lblSpacer = document.createElement('div');
+  lblSpacer.className = 'round-label';
+  lblSpacer.innerHTML = '&nbsp;';
+  finalCol.appendChild(lblSpacer);
+  const finalMw = document.createElement('div');
+  finalMw.className = 'round-matches';
+  finalMatch.forEach(m => finalMw.appendChild(m));
+  finalCol.appendChild(finalMw);
+  mm.appendChild(finalCol);
+
+  mm.appendChild(makeConn(1, 1));
+
+  /* ── Campeão (uma única linha — vencedor da final) ── */
+  const campWrap = document.createElement('div');
+  const campBox  = document.createElement('div');
+  campBox.className = 'match-box final-box';
+  campBox.appendChild(makeTeam('Vencedor da Final', 'tX', true));
+  campWrap.appendChild(campBox);
+  mm.appendChild(makeRound('Campeão', [campWrap]));
 }
 
 /* ===================================================
@@ -402,13 +451,6 @@ function renderClassificacao() {
   if (!wrap) return;
 
   wrap.innerHTML = `
-    <!-- Disputa de 3° Lugar -->
-    <div class="terceiro-wrapper">
-      <div class="terceiro-box">
-        <span class="terceiro-label">Disputa de 3° Lugar</span>
-        <span class="terceiro-badge">MD1</span>
-      </div>
-    </div>
 
     <!-- Cards de colocação -->
     <div class="classif-grid">
