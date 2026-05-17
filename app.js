@@ -490,94 +490,13 @@ function renderClassificacao() {
 
 
 /* ===================================================
-   PDF — impressão otimizada via window.print()
-   =================================================== */
-
-/**
- * Oculta os botões de controle, aciona window.print() e restaura.
- * O navegador abre o diálogo de impressão; o usuário escolhe
- * "Salvar como PDF" na impressora de destino.
- */
-function salvarPDF() {
-  /* Esconde controles que não devem aparecer no PDF */
-  const controls   = document.querySelector('.controls');
-  const themeBtn   = document.querySelector('.theme-toggle');
-  if (controls)  controls.style.display = 'none';
-  if (themeBtn)  themeBtn.style.display = 'none';
-
-  window.print();
-
-  /* Restaura após o diálogo fechar */
-  if (controls)  controls.style.display = '';
-  if (themeBtn)  themeBtn.style.display = '';
-}
-
-/* ===================================================
-   DOWNLOAD — salva o HTML atual como arquivo
-   =================================================== */
-
-/**
- * Faz download de um HTML autossuficiente — CSS e JS embutidos inline.
- * O arquivo baixado funciona sozinho sem depender de arquivos externos.
- */
-async function baixarPagina() {
-  try {
-    /* Busca o CSS e JS externos */
-    const [cssRes, jsRes] = await Promise.all([
-      fetch('style.css'),
-      fetch('app.js'),
-    ]);
-    const cssText = await cssRes.text();
-    const jsText  = await jsRes.text();
-
-    /* Clona o HTML atual sem os links/scripts externos */
-    const clone = document.documentElement.cloneNode(true);
-
-    /* Remove <link rel="stylesheet" href="style.css"> */
-    clone.querySelectorAll('link[rel="stylesheet"][href="style.css"]').forEach(el => el.remove());
-
-    /* Remove <script src="app.js"> */
-    clone.querySelectorAll('script[src="app.js"]').forEach(el => el.remove());
-
-    /* Injeta CSS inline no <head> */
-    const styleEl = document.createElement('style');
-    styleEl.textContent = cssText;
-    clone.querySelector('head').appendChild(styleEl);
-
-    /* Injeta JS inline antes do </body> */
-    const scriptEl = document.createElement('script');
-    scriptEl.textContent = jsText;
-    clone.querySelector('body').appendChild(scriptEl);
-
-    /* Gera e dispara o download */
-    const html = '<!DOCTYPE html>\n' + clone.outerHTML;
-    const blob  = new Blob([html], { type: 'text/html;charset=utf-8' });
-    const url   = URL.createObjectURL(blob);
-    const a     = document.createElement('a');
-    a.href     = url;
-    a.download = 'chaveamento-riorise.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Erro ao baixar:', err);
-    alert('Erro ao gerar download. Verifique se os arquivos style.css e app.js estão acessíveis.');
-  }
-}
-
-/* ===================================================
    INICIALIZAÇÃO
    =================================================== */
 
 // Botão de sorteio
 document.addEventListener('DOMContentLoaded', () => {
-  const btnSortear  = document.getElementById('btn-sortear');
-  const btnDownload = document.getElementById('btn-download');
-  const btnPdf      = document.getElementById('btn-pdf');
-  if (btnSortear)  btnSortear.addEventListener('click', sortear);
-  if (btnDownload) btnDownload.addEventListener('click', baixarPagina);
-  if (btnPdf)      btnPdf.addEventListener('click', salvarPDF);
+  const btnSortear = document.getElementById('btn-sortear');
+  if (btnSortear) btnSortear.addEventListener('click', sortear);
 
   // Primeiro sorteio automático
   sortear();
