@@ -170,7 +170,7 @@ function renderPontuacao(grupos) {
         <td><input class="input-pts" type="number" min="0" max="2" value="" placeholder="-" oninput="calcPts(this)"></td>
         <td><input class="input-pts" type="number" min="0" max="2" value="" placeholder="-" oninput="calcPts(this)"></td>
         <td><input class="input-pts" type="number" min="0" max="2" value="" placeholder="-" oninput="calcPts(this)"></td>
-        <td class="pts-cell" id="pts-${gi}-${i}">—</td>
+        <td class="pts-cell">—</td>
       `;
       tbody.appendChild(tr);
     });
@@ -194,13 +194,14 @@ function calcPts(input) {
 
   /* Recalcula pontos de cada linha */
   const rows = Array.from(tbody.children);
-  rows.forEach((row, ri) => {
+  rows.forEach((row) => {
     const cells   = row.querySelectorAll('input');
     const v       = parseInt(cells[1].value) || 0;
     const hasData = cells[0].value !== '' || cells[1].value !== '';
     const pts     = hasData ? v * 3 : null;
 
-    const ptsCel = document.getElementById('pts-' + gi + '-' + ri);
+    /* pts-cell está DENTRO da própria linha — sem depender de ID externo */
+    const ptsCel = row.querySelector('.pts-cell');
     if (ptsCel) ptsCel.textContent = pts !== null ? pts : '—';
 
     /* guarda pts no dataset para ordenação */
@@ -451,6 +452,13 @@ function renderClassificacao() {
   if (!wrap) return;
 
   wrap.innerHTML = `
+    <!-- Disputa de 3° Lugar -->
+    <div class="terceiro-wrapper">
+      <div class="terceiro-box">
+        <span class="terceiro-label">Disputa de 3° Lugar</span>
+        <span class="terceiro-badge">MD1</span>
+      </div>
+    </div>
 
     <!-- Cards de colocação -->
     <div class="classif-grid">
@@ -482,13 +490,69 @@ function renderClassificacao() {
 
 
 /* ===================================================
+   DOWNLOAD — salva o HTML atual como arquivo
+   =================================================== */
+
+/**
+ * Faz download de um HTML autossuficiente — CSS e JS embutidos inline.
+ * O arquivo baixado funciona sozinho sem depender de arquivos externos.
+ */
+async function baixarPagina() {
+  try {
+    /* Busca o CSS e JS externos */
+    const [cssRes, jsRes] = await Promise.all([
+      fetch('style.css'),
+      fetch('app.js'),
+    ]);
+    const cssText = await cssRes.text();
+    const jsText  = await jsRes.text();
+
+    /* Clona o HTML atual sem os links/scripts externos */
+    const clone = document.documentElement.cloneNode(true);
+
+    /* Remove <link rel="stylesheet" href="style.css"> */
+    clone.querySelectorAll('link[rel="stylesheet"][href="style.css"]').forEach(el => el.remove());
+
+    /* Remove <script src="app.js"> */
+    clone.querySelectorAll('script[src="app.js"]').forEach(el => el.remove());
+
+    /* Injeta CSS inline no <head> */
+    const styleEl = document.createElement('style');
+    styleEl.textContent = cssText;
+    clone.querySelector('head').appendChild(styleEl);
+
+    /* Injeta JS inline antes do </body> */
+    const scriptEl = document.createElement('script');
+    scriptEl.textContent = jsText;
+    clone.querySelector('body').appendChild(scriptEl);
+
+    /* Gera e dispara o download */
+    const html = '<!DOCTYPE html>\n' + clone.outerHTML;
+    const blob  = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href     = url;
+    a.download = 'chaveamento-riorise.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Erro ao baixar:', err);
+    alert('Erro ao gerar download. Verifique se os arquivos style.css e app.js estão acessíveis.');
+  }
+}
+
+/* ===================================================
    INICIALIZAÇÃO
    =================================================== */
 
 // Botão de sorteio
 document.addEventListener('DOMContentLoaded', () => {
-  const btnSortear = document.getElementById('btn-sortear');
-  if (btnSortear) btnSortear.addEventListener('click', sortear);
+  const btnSortear  = document.getElementById('btn-sortear');
+  const btnDownload = document.getElementById('btn-download');
+  if (btnSortear)  btnSortear.addEventListener('click', sortear);
+  if (btnDownload) btnDownload.addEventListener('click', baixarPagina);
 
   // Primeiro sorteio automático
   sortear();
