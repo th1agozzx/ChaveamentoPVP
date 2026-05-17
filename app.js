@@ -44,6 +44,7 @@ function sortear() {
   renderGrupos(grupos);
   renderPontuacao(grupos);
   renderMata(grupos);
+  renderClassificacao();
 }
 
 /* ===================================================
@@ -205,7 +206,7 @@ function calcPts(input) {
 }
 
 /* ===================================================
-   MATA-MATA (Quartas → Semi → Final)
+   MATA-MATA (Quartas → Final → Semi → Campeão)
    =================================================== */
 
 /**
@@ -231,12 +232,14 @@ function makeTeam(label, cor, isFinal) {
  * @param {string}  t1, t2   - labels dos times
  * @param {string}  c1, c2   - classes de cor
  * @param {boolean} isFinal
+ * @param {string}  [id]     - id opcional para o box
  * @returns {HTMLElement}
  */
-function makeMatch(t1, c1, t2, c2, isFinal) {
+function makeMatch(t1, c1, t2, c2, isFinal, id) {
   const wrap = document.createElement('div');
   const box  = document.createElement('div');
   box.className = 'match-box' + (isFinal ? ' final-box' : '');
+  if (id) box.id = id;
   box.appendChild(makeTeam(t1, c1, isFinal));
   box.appendChild(makeTeam(t2, c2, isFinal));
   wrap.appendChild(box);
@@ -267,32 +270,68 @@ function makeRound(label, matches) {
 }
 
 /**
- * Cria um conector SVG entre rodadas.
- * @param {number} n - número de linhas/pares a conectar
+ * Cria um conector SVG proporcional entre rodadas.
+ * Conecta N match-boxes de uma coluna a N/2 da próxima (ou 1 se convergindo).
+ * @param {number} fromCount - número de match-boxes na coluna de origem
+ * @param {number} toCount   - número de match-boxes na coluna de destino
  * @returns {HTMLElement}
  */
-function makeConn(n) {
+function makeConn(fromCount, toCount) {
   const c = document.createElement('div');
   c.className = 'connector';
-  c.style.cssText = 'width:26px;align-self:stretch;display:flex;align-items:center';
+  c.style.cssText = 'width:32px;align-self:stretch;display:flex;align-items:center;flex-shrink:0';
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('width', '26');
+  svg.setAttribute('width', '32');
   svg.setAttribute('height', '100%');
-  svg.setAttribute('viewBox', '0 0 26 100');
+  svg.setAttribute('viewBox', '0 0 32 100');
   svg.setAttribute('preserveAspectRatio', 'none');
-  svg.style.cssText = 'width:26px;height:100%;display:block';
+  svg.style.cssText = 'width:32px;height:100%;display:block';
 
-  const stroke = 'rgba(204,34,34,0.3)';
+  const stroke = 'rgba(204,34,34,0.45)';
+  const strokeW = '1.5';
 
-  for (let i = 0; i < n; i++) {
-    const y1   = (100 / (n * 2)) * (2 * i + 1);
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', `M0 ${y1} L13 ${y1} L13 50 L26 50`);
-    path.setAttribute('fill', 'none');
-    path.setAttribute('stroke', stroke);
-    path.setAttribute('stroke-width', '1.5');
-    svg.appendChild(path);
+  if (fromCount === toCount) {
+    /* Linhas retas: cada from conecta direto ao to correspondente */
+    for (let i = 0; i < fromCount; i++) {
+      const y = (100 / (fromCount * 2)) * (2 * i + 1);
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', '0');
+      line.setAttribute('y1', String(y));
+      line.setAttribute('x2', '32');
+      line.setAttribute('y2', String(y));
+      line.setAttribute('stroke', stroke);
+      line.setAttribute('stroke-width', strokeW);
+      svg.appendChild(line);
+    }
+  } else if (fromCount > toCount) {
+    /* Convergir: pares de from → um to */
+    const pairs = fromCount / toCount; /* normalmente 2 */
+    for (let g = 0; g < toCount; g++) {
+      const yTo = (100 / (toCount * 2)) * (2 * g + 1);
+      for (let p = 0; p < pairs; p++) {
+        const idx  = g * pairs + p;
+        const yFrom = (100 / (fromCount * 2)) * (2 * idx + 1);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M0 ${yFrom} L16 ${yFrom} L16 ${yTo} L32 ${yTo}`);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', stroke);
+        path.setAttribute('stroke-width', strokeW);
+        svg.appendChild(path);
+      }
+    }
+  } else {
+    /* Divergir: um from → múltiplos to (usado antes do troféu→semi) */
+    for (let i = 0; i < toCount; i++) {
+      const yTo   = (100 / (toCount * 2)) * (2 * i + 1);
+      const yFrom = 50;
+      const path  = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', `M0 ${yFrom} L16 ${yFrom} L16 ${yTo} L32 ${yTo}`);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', stroke);
+      path.setAttribute('stroke-width', strokeW);
+      svg.appendChild(path);
+    }
   }
 
   c.appendChild(svg);
@@ -300,32 +339,39 @@ function makeConn(n) {
 }
 
 /**
- * Renderiza o bracket de mata-mata completo no #mata-mata.
+ * Renderiza o bracket de mata-mata:
+ * Quartas → [conn] → Final/Troféu → [conn] → Semi → [conn] → Campeão
  * @param {string[][]} grupos
  */
 function renderMata(grupos) {
   const mm = document.getElementById('mata-mata');
   mm.innerHTML = '';
 
-  /* Quartas de Final */
+  /* ── Quartas de Final ── */
   const qMatches = [
-    makeMatch('1º Grupo A', 'tA', '1º Grupo B', 'tB'),
-    makeMatch('2º Grupo A', 'tB', '2º Grupo B', 'tA'),
-    makeMatch('1º Grupo C', 'tC', '1º Grupo D', 'tD'),
-    makeMatch('2º Grupo C', 'tD', '2º Grupo D', 'tC'),
+    makeMatch('1º Grupo A', 'tA', '2º Grupo B', 'tB'),
+    makeMatch('1º Grupo B', 'tB', '2º Grupo A', 'tA'),
+    makeMatch('1º Grupo C', 'tC', '2º Grupo D', 'tD'),
+    makeMatch('1º Grupo D', 'tD', '2º Grupo C', 'tC'),
   ];
   mm.appendChild(makeRound('Quartas de Final', qMatches));
-  mm.appendChild(makeConn(4));
+  mm.appendChild(makeConn(4, 2));
 
-  /* Semifinal */
+  /* ── Semifinal ── */
   const sMatches = [
-    makeMatch('Venc. Q1', 'tX', 'Venc. Q2', 'tX'),
-    makeMatch('Venc. Q3', 'tX', 'Venc. Q4', 'tX'),
+    makeMatch('Venc. Q1/Q2', 'tX', 'Venc. Q3/Q4', 'tX'),
+    makeMatch('Perd. Q1/Q2', 'tX', 'Perd. Q3/Q4', 'tX'),
   ];
-  mm.appendChild(makeRound('Semifinal', sMatches));
-  mm.appendChild(makeConn(2));
+  const semiCol = makeRound('Semifinal', sMatches);
+  /* Pequena nota na segunda partida */
+  const semiNote = document.createElement('div');
+  semiNote.style.cssText = 'font-size:9px;letter-spacing:1.5px;color:var(--bronze);text-align:center;margin-top:-12px;margin-bottom:4px;font-family:"Rajdhani",sans-serif;font-weight:700;';
+  semiNote.textContent = '▲ DISPUTA 3° LUGAR';
+  semiCol.appendChild(semiNote);
+  mm.appendChild(semiCol);
+  mm.appendChild(makeConn(2, 1));
 
-  /* Troféu central */
+  /* ── Troféu / Final ── */
   const trophyCol = document.createElement('div');
   trophyCol.className = 'trophy-col';
   trophyCol.innerHTML = `
@@ -334,12 +380,64 @@ function renderMata(grupos) {
     <div class="trophy-label" style="font-size:9px;letter-spacing:1.5px;color:var(--text3)">Melhor de 3</div>
   `;
   mm.appendChild(trophyCol);
-  mm.appendChild(makeConn(2));
+  mm.appendChild(makeConn(1, 1));
 
-  /* Final */
+  /* ── Campeão ── */
   const fMatch = [makeMatch('Venc. Semi 1', 'tX', 'Venc. Semi 2', 'tX', true)];
   mm.appendChild(makeRound('Campeão', fMatch));
 }
+
+/* ===================================================
+   CLASSIFICAÇÃO FINAL
+   =================================================== */
+
+/**
+ * Renderiza a seção de Classificação Final com cards premium.
+ * Atualiza automaticamente conforme progresso do bracket.
+ * Por ora exibe estado inicial "aguardando"; 
+ * pode ser expandido com inputs de resultado.
+ */
+function renderClassificacao() {
+  const wrap = document.getElementById('classif-section');
+  if (!wrap) return;
+
+  wrap.innerHTML = `
+    <!-- Disputa de 3° Lugar -->
+    <div class="terceiro-wrapper">
+      <div class="terceiro-box">
+        <span class="terceiro-label">Disputa de 3° Lugar</span>
+        <span class="terceiro-badge">MD1</span>
+      </div>
+    </div>
+
+    <!-- Cards de colocação -->
+    <div class="classif-grid">
+      <div class="classif-card c2">
+        <div class="classif-icon">🥈</div>
+        <div class="classif-place">2º Lugar</div>
+        <div class="classif-name" id="classif-2">
+          <span class="classif-empty">Aguardando final</span>
+        </div>
+      </div>
+      <div class="classif-card c1">
+        <div class="classif-icon">🏆</div>
+        <div class="classif-place">1º Lugar</div>
+        <div class="classif-name" id="classif-1">
+          <span class="classif-empty">Aguardando final</span>
+        </div>
+      </div>
+      <div class="classif-card c3">
+        <div class="classif-icon">🥉</div>
+        <div class="classif-place">3º Lugar</div>
+        <div class="classif-name" id="classif-3">
+          <span class="classif-empty">Aguardando disputa</span>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
 
 /* ===================================================
    INICIALIZAÇÃO

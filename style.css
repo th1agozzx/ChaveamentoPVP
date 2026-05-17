@@ -523,10 +523,10 @@ body::after {
   font-size: 11px;
   table-layout: fixed;
 }
-/* Equipe=auto, J/V/D=28px each, Pts=30px */
+/* Equipe=auto, J/V/D=28px each, Pts=44px */
 .pont-table col.col-eq  { width: auto; }
 .pont-table col.col-num { width: 28px; }
-.pont-table col.col-pts { width: 34px; }
+.pont-table col.col-pts { width: 44px; }
 
 .pont-table th {
   padding: 5px 2px;
@@ -566,9 +566,10 @@ body::after {
 .pts-cell {
   font-family: 'Bebas Neue', sans-serif;
   font-weight: 700;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: 1px;
   color: var(--accent3) !important;
+  padding: 4px 4px !important;
 }
 
 .input-pts {
@@ -576,12 +577,12 @@ body::after {
   font-size: 12px;
   font-weight: 600;
   width: 100%;
-  max-width: 34px;
+  max-width: 38px;
   background: var(--bg2);
   border: 1px solid var(--border);
   color: var(--text);
   text-align: center;
-  padding: 2px 0;
+  padding: 2px 1px;
   border-radius: 2px;
   outline: none;
   transition: border-color .15s;
@@ -689,6 +690,124 @@ body::after {
   color: var(--gold2);
 }
 
+/* ===== CLASSIFICAÇÃO FINAL ===== */
+.classif-grid {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0 24px;
+}
+
+.classif-card {
+  position: relative;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 12px 100%, 0 calc(100% - 12px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px 20px 14px;
+  min-width: 160px;
+  min-height: 100px;
+  text-align: center;
+  transition: box-shadow .2s;
+}
+
+.classif-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+}
+
+.classif-card.c1 {
+  border-color: var(--gold);
+  box-shadow: 0 0 28px rgba(224,160,32,0.25);
+  min-width: 200px;
+}
+.classif-card.c1::before { background: linear-gradient(90deg, transparent, var(--gold2), transparent); }
+.classif-card.c2::before { background: var(--silver); }
+.classif-card.c3::before { background: var(--bronze); }
+
+.classif-icon {
+  font-size: 30px;
+  line-height: 1;
+  filter: drop-shadow(0 0 8px rgba(224,160,32,0.5));
+}
+.classif-card.c1 .classif-icon { font-size: 40px; animation: pulse 2.2s ease-in-out infinite; }
+
+.classif-place {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+.classif-card.c1 .classif-place { color: var(--gold2); }
+.classif-card.c2 .classif-place { color: var(--silver); }
+.classif-card.c3 .classif-place { color: var(--bronze); }
+
+.classif-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: var(--text);
+  min-height: 24px;
+}
+.classif-card.c1 .classif-name {
+  font-size: 26px;
+  color: var(--gold2);
+  text-shadow: 0 0 18px rgba(255,208,96,0.4);
+}
+.classif-card.c2 .classif-name { color: var(--silver); }
+.classif-card.c3 .classif-name { color: var(--bronze); }
+
+.classif-empty {
+  font-size: 12px;
+  color: var(--text3);
+  font-style: italic;
+  letter-spacing: 1px;
+}
+
+/* Disputa 3° Lugar */
+.terceiro-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+.terceiro-box {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  padding: 10px 20px 8px;
+  clip-path: polygon(8px 0%, calc(100% - 8px) 0%, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0% 50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.terceiro-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--bronze);
+}
+.terceiro-badge {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  background: var(--bronze);
+  color: #1a0000;
+  padding: 1px 6px;
+  border-radius: 2px;
+}
+
 /* ===== LEGEND ===== */
 .legend {
   display: flex;
@@ -749,11 +868,11 @@ body::after {
   .match-box { width: 128px; }
   .match-team { font-size: 10px; }
   .pont-table col.col-num { width: 24px; }
-  .pont-table col.col-pts { width: 30px; }
+  .pont-table col.col-pts { width: 38px; }
   .pont-table th, .pont-table td { padding-left: 1px; padding-right: 1px; }
   .pont-table th:first-child, .pont-table td:first-child { padding-left: 6px; }
-  .input-pts { max-width: 26px; font-size: 11px; }
-  .pts-cell { font-size: 13px; }
+  .input-pts { max-width: 28px; font-size: 11px; }
+  .pts-cell { font-size: 15px; }
 }
 
 @media (max-width: 400px) {
