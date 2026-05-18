@@ -61,6 +61,11 @@
 
 body {
   background: var(--bg);
+  background-image: url('img_background.png');
+  background-size: cover;
+  background-position: center top;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--text);
   font-family: 'Barlow Condensed', sans-serif;
   min-height: 100vh;
@@ -78,18 +83,18 @@ body::before {
   z-index: 0;
 }
 
-/* Subtle vignette */
+/* Escurecimento sobre o background para manter legibilidade */
 body::after {
   content: '';
   position: fixed;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.55) 100%);
+  background: rgba(0,0,0,0.72);
   pointer-events: none;
   z-index: 0;
 }
 
 [data-theme="light"] body::after {
-  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.08) 100%);
+  background: rgba(177, 177, 177, 0.445);
 }
 
 .page {
@@ -381,7 +386,7 @@ body::after {
 }
 .equipe-row:last-child { border-bottom: none; }
 .equipe-row.avanca { color: var(--text); }
-.equipe-row.nao-avanca { color: var(--text3); }
+.equipe-row.nao-avanca { color: var(--text3); text-decoration: line-through; text-decoration-color: var(--text3); }
 
 .pos-badge {
   font-family: 'Rajdhani', sans-serif;
