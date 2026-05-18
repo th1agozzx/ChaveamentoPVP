@@ -591,7 +591,55 @@ body::after {
 .input-pts:focus { border-color: var(--accent); box-shadow: 0 0 6px var(--glow-r); }
 .input-pts:disabled { cursor: not-allowed; opacity: 0.45; }
 
-/* ===== MATA-MATA ===== */
+/* ===== INPUT EDITÁVEL — MATA-MATA ===== */
+.team-input {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .3px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--border);
+  color: var(--text2);
+  width: 100%;
+  outline: none;
+  padding: 0;
+  transition: border-color .15s, color .15s;
+  min-width: 0;
+}
+.team-input::placeholder { color: var(--text3); font-style: italic; }
+.team-input:focus { border-bottom-color: var(--accent); color: var(--text); }
+.team-input:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.tGold .team-input { color: var(--gold2); }
+.tGold .team-input::placeholder { color: var(--gold); opacity: .6; }
+.tGold .team-input:focus { border-bottom-color: var(--gold2); }
+
+/* ===== INPUT EDITÁVEL — RANKING FINAL ===== */
+.rank-input {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--border);
+  color: var(--text);
+  width: 100%;
+  text-align: center;
+  outline: none;
+  padding: 2px 0;
+  transition: border-color .15s, color .15s;
+}
+.rank-input::placeholder { font-size: 11px; color: var(--text3); font-style: italic; letter-spacing: 1px; font-family: 'Barlow Condensed', sans-serif; }
+.rank-input:focus { border-bottom-color: var(--accent); }
+.rank-input:disabled { cursor: not-allowed; opacity: 0.45; }
+
+.rank-input-gold { font-size: 26px; color: var(--gold2); }
+.rank-input-gold:focus { border-bottom-color: var(--gold2); }
+.rank-input-gold::placeholder { color: var(--gold); }
+
+.rank-input-bronze { color: var(--bronze); }
+.rank-input-bronze:focus { border-bottom-color: var(--bronze); }
 .mata-mata {
   display: flex;
   align-items: center;

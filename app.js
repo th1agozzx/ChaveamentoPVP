@@ -50,12 +50,28 @@ function collectState() {
     });
     tables.push(rows);
   });
-  return { tables, grupos: window._currentGrupos };
+
+  /* Mata-mata: coleta todos os inputs de equipe pelo id */
+  const mata = {};
+  document.querySelectorAll('.team-input').forEach(inp => {
+    if (inp.id) mata[inp.id] = inp.value;
+  });
+
+  /* Ranking final */
+  const ranking = {};
+  ['rank-1','rank-2','rank-3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) ranking[id] = el.value;
+  });
+
+  return { tables, grupos: window._currentGrupos, mata, ranking };
 }
 
 /* ===== APLICA ESTADO ===== */
 function applyState(state, broadcast) {
   if (!state || !state.tables) return;
+
+  /* Tabela de pontuação */
   const cards = document.querySelectorAll('.pont-card');
   state.tables.forEach((rows, gi) => {
     const card = cards[gi];
@@ -68,15 +84,32 @@ function applyState(state, broadcast) {
       inputs[0].value = vals[0];
       inputs[1].value = vals[1];
       inputs[2].value = vals[2];
-      calcPts(inputs[0]);
+      calcPts(inputs[0], true);
     });
   });
+
+  /* Mata-mata */
+  if (state.mata) {
+    Object.entries(state.mata).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+    });
+  }
+
+  /* Ranking final */
+  if (state.ranking) {
+    Object.entries(state.ranking).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) { el.value = val; el.dispatchEvent(new Event('input')); }
+    });
+  }
+
   if (broadcast) broadcastState();
 }
 
 /* ===== BLOQUEIO DE INPUTS ===== */
 function setInputsLocked(locked) {
-  document.querySelectorAll('.input-pts').forEach(inp => {
+  document.querySelectorAll('.input-pts, .team-input, .rank-input').forEach(inp => {
     inp.disabled = locked;
     inp.style.cursor = locked ? 'not-allowed' : '';
     inp.style.opacity = locked ? '0.45' : '';
@@ -418,37 +451,59 @@ function calcPts(input, skipBroadcast) {
 
 /**
  * Cria um elemento de time dentro de um match-box.
- * @param {string}  label
- * @param {string}  cor      - classe CSS (tA, tB, tC, tD, tX)
+ * @param {string}  label    - texto padrão/placeholder
+ * @param {string}  cor      - classe CSS (tA, tB, tC, tD, tX, tGold)
  * @param {boolean} isFinal  - adiciona badge MD3 se true
+ * @param {string}  [inputId] - se fornecido, renderiza um input editável
  * @returns {HTMLElement}
  */
-function makeTeam(label, cor, isFinal) {
+function makeTeam(label, cor, isFinal, inputId) {
   const d = document.createElement('div');
   d.className = 'match-team ' + (cor || 'tX');
 
-  let inner = `<span class="match-team-name">${label}</span>`;
-  if (isFinal) inner += `<span class="md3-tag">MD3</span>`;
-  d.innerHTML = inner;
+  if (inputId) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.id = inputId;
+    inp.className = 'team-input';
+    inp.placeholder = label;
+    inp.maxLength = 24;
+    inp.autocomplete = 'off';
+    inp.addEventListener('input', () => broadcastState());
+    d.appendChild(inp);
+  } else {
+    const span = document.createElement('span');
+    span.className = 'match-team-name';
+    span.textContent = label;
+    d.appendChild(span);
+  }
+
+  if (isFinal) {
+    const tag = document.createElement('span');
+    tag.className = 'md3-tag';
+    tag.textContent = 'MD3';
+    d.appendChild(tag);
+  }
 
   return d;
 }
 
 /**
  * Cria um match-box com dois times.
- * @param {string}  t1, t2   - labels dos times
- * @param {string}  c1, c2   - classes de cor
+ * @param {string}  t1, t2    - labels/placeholders
+ * @param {string}  c1, c2    - classes de cor
  * @param {boolean} isFinal
- * @param {string}  [id]     - id opcional para o box
+ * @param {string}  [id]      - id do box
+ * @param {string}  [id1,id2] - ids dos inputs de equipe (torna editável)
  * @returns {HTMLElement}
  */
-function makeMatch(t1, c1, t2, c2, isFinal, id) {
+function makeMatch(t1, c1, t2, c2, isFinal, id, id1, id2) {
   const wrap = document.createElement('div');
   const box  = document.createElement('div');
   box.className = 'match-box' + (isFinal ? ' final-box' : '');
   if (id) box.id = id;
-  box.appendChild(makeTeam(t1, c1, isFinal));
-  box.appendChild(makeTeam(t2, c2, isFinal));
+  box.appendChild(makeTeam(t1, c1, isFinal, id1));
+  box.appendChild(makeTeam(t2, c2, isFinal, id2));
   wrap.appendChild(box);
   return wrap;
 }
@@ -546,28 +601,28 @@ function makeConn(fromCount, toCount) {
 }
 
 /**
- * Renderiza o bracket de mata-mata:
- * Quartas → [conn] → Semi → [conn] → Final → [conn] → Campeão
+ * Renderiza o bracket de mata-mata com inputs editáveis (admin).
+ * Quartas → Semi → Final → Campeão
  * @param {string[][]} grupos
  */
 function renderMata(grupos) {
   const mm = document.getElementById('mata-mata');
   mm.innerHTML = '';
 
-  /* ── Quartas de Final ── */
+  /* ── Quartas de Final ── (labels fixos — times vêm dos grupos) */
   const qMatches = [
-    makeMatch('1º Grupo A', 'tA', '1º Grupo B', 'tB'),
-    makeMatch('2º Grupo A', 'tB', '2º Grupo B', 'tA'),
-    makeMatch('1º Grupo C', 'tC', '1º Grupo D', 'tD'),
-    makeMatch('2º Grupo C', 'tD', '2º Grupo D', 'tC'),
+    makeMatch('1º Grupo A', 'tA', '1º Grupo B', 'tB', false, null, 'q1t1', 'q1t2'),
+    makeMatch('2º Grupo A', 'tB', '2º Grupo B', 'tA', false, null, 'q2t1', 'q2t2'),
+    makeMatch('1º Grupo C', 'tC', '1º Grupo D', 'tD', false, null, 'q3t1', 'q3t2'),
+    makeMatch('2º Grupo C', 'tD', '2º Grupo D', 'tC', false, null, 'q4t1', 'q4t2'),
   ];
   mm.appendChild(makeRound('Quartas de Final', qMatches));
   mm.appendChild(makeConn(4, 2));
 
   /* ── Semifinal ── */
   const sMatches = [
-    makeMatch('Venc. Q1', 'tX', 'Venc. Q2', 'tX'),
-    makeMatch('Perd. Q3', 'tX', 'Perd. Q4', 'tX'),
+    makeMatch('Venc. Q1', 'tX', 'Venc. Q2', 'tX', false, null, 's1t1', 's1t2'),
+    makeMatch('Perd. Q3', 'tX', 'Perd. Q4', 'tX', false, null, 's2t1', 's2t2'),
   ];
   const semiCol = makeRound('Semifinal', sMatches);
   const semiNote = document.createElement('div');
@@ -588,11 +643,10 @@ function renderMata(grupos) {
   mm.appendChild(trophyCol);
   mm.appendChild(makeConn(1, 1));
 
-  /* ── Tabela Final (sem label "Campeão" em cima) ── */
-  const finalMatch = [makeMatch('Venc. Semi 1', 'tX', 'Venc. Semi 2', 'tX', true)];
+  /* ── Final ── */
+  const finalMatch = [makeMatch('Venc. Semi 1', 'tX', 'Venc. Semi 2', 'tX', true, null, 'f1t1', 'f1t2')];
   const finalCol = document.createElement('div');
   finalCol.className = 'round-col';
-  /* Espaçador vazio no lugar do label para manter alinhamento vertical */
   const lblSpacer = document.createElement('div');
   lblSpacer.className = 'round-label';
   lblSpacer.innerHTML = '&nbsp;';
@@ -605,11 +659,11 @@ function renderMata(grupos) {
 
   mm.appendChild(makeConn(1, 1));
 
-  /* ── Campeão (uma única linha — vencedor da final) ── */
+  /* ── Campeão ── */
   const campWrap = document.createElement('div');
   const campBox  = document.createElement('div');
   campBox.className = 'match-box final-box camp-box';
-  campBox.appendChild(makeTeam('Vencedor da Final', 'tGold', true));
+  campBox.appendChild(makeTeam('Vencedor da Final', 'tGold', true, 'camp-t1'));
   campWrap.appendChild(campBox);
   mm.appendChild(makeRound('Campeão', [campWrap]));
 }
@@ -619,42 +673,43 @@ function renderMata(grupos) {
    =================================================== */
 
 /**
- * Renderiza a seção de Classificação Final com cards premium.
- * Atualiza automaticamente conforme progresso do bracket.
- * Por ora exibe estado inicial "aguardando"; 
- * pode ser expandido com inputs de resultado.
+ * Renderiza a seção de Classificação Final com inputs editáveis (admin).
  */
 function renderClassificacao() {
   const wrap = document.getElementById('classif-section');
   if (!wrap) return;
 
   wrap.innerHTML = `
-
-    <!-- Cards de colocação -->
     <div class="classif-grid">
       <div class="classif-card c2">
         <div class="classif-icon">🥈</div>
         <div class="classif-place">2º Lugar</div>
-        <div class="classif-name" id="classif-2">
-          <span class="classif-empty">Aguardando final</span>
+        <div class="classif-name">
+          <input id="rank-2" class="rank-input" type="text" placeholder="Aguardando final" maxlength="24" autocomplete="off">
         </div>
       </div>
       <div class="classif-card c1">
         <div class="classif-icon">🏆</div>
         <div class="classif-place">1º Lugar</div>
-        <div class="classif-name" id="classif-1">
-          <span class="classif-empty">Aguardando final</span>
+        <div class="classif-name">
+          <input id="rank-1" class="rank-input rank-input-gold" type="text" placeholder="Aguardando final" maxlength="24" autocomplete="off">
         </div>
       </div>
       <div class="classif-card c3">
         <div class="classif-icon">🥉</div>
         <div class="classif-place">3º Lugar</div>
-        <div class="classif-name" id="classif-3">
-          <span class="classif-empty">Aguardando disputa</span>
+        <div class="classif-name">
+          <input id="rank-3" class="rank-input rank-input-bronze" type="text" placeholder="Aguardando disputa" maxlength="24" autocomplete="off">
         </div>
       </div>
     </div>
   `;
+
+  /* Propaga em tempo real ao digitar */
+  ['rank-1','rank-2','rank-3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => broadcastState());
+  });
 }
 
 
@@ -666,7 +721,17 @@ function renderClassificacao() {
 // Botão de sorteio + botão admin
 document.addEventListener('DOMContentLoaded', () => {
   const btnSortear = document.getElementById('btn-sortear');
-  if (btnSortear) btnSortear.addEventListener('click', sortear);
+  if (btnSortear) {
+    btnSortear.addEventListener('click', () => {
+      if (!isAdmin) {
+        showPasswordModal();
+        return;
+      }
+      /* Limpa estado salvo antes de novo sorteio */
+      try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+      sortear();
+    });
+  }
 
   const btnAdmin = document.getElementById('btn-admin');
   if (btnAdmin) {
@@ -682,6 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Primeiro sorteio automático
+  // Primeiro sorteio automático (sem exigir senha no carregamento inicial)
   sortear();
 });
