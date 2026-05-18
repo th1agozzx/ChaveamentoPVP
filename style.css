@@ -94,7 +94,7 @@ body::after {
 }
 
 [data-theme="light"] body::after {
-  background: rgba(177, 177, 177, 0.445);
+  background: rgba(77, 76, 76, 0.445);
 }
 
 .page {
@@ -386,7 +386,7 @@ body::after {
 }
 .equipe-row:last-child { border-bottom: none; }
 .equipe-row.avanca { color: var(--text); }
-.equipe-row.nao-avanca { color: var(--text3); text-decoration: line-through; text-decoration-color: var(--text3); }
+.equipe-row.nao-avanca { color: var(--text3); }
 
 .pos-badge {
   font-family: 'Rajdhani', sans-serif;
