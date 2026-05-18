@@ -8,6 +8,172 @@ const EQUIPES = Array.from({ length: 12 }, (_, i) => 'Equipe ' + (i + 1));
 const CORES  = ['gA', 'gB', 'gC', 'gD'];
 const NOMES  = ['A', 'B', 'C', 'D'];
 
+/* ===== SENHA DE ADMIN ===== */
+const ADMIN_PASSWORD = 'riorise2025'; // ← TROQUE AQUI
+const STORAGE_KEY    = 'riorise_state';
+let   isAdmin        = false;
+
+/* ===== CANAL DE TEMPO REAL (entre abas/dispositivos via localStorage) ===== */
+const BC = (typeof BroadcastChannel !== 'undefined') ? new BroadcastChannel('riorise_pvp') : null;
+
+function broadcastState() {
+  const state = collectState();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  if (BC) BC.postMessage({ type: 'state', state });
+}
+
+if (BC) {
+  BC.onmessage = (ev) => {
+    if (ev.data && ev.data.type === 'state') {
+      applyState(ev.data.state, false);
+    }
+  };
+}
+
+window.addEventListener('storage', (ev) => {
+  if (ev.key === STORAGE_KEY && ev.newValue) {
+    try {
+      const state = JSON.parse(ev.newValue);
+      applyState(state, false);
+    } catch(e) {}
+  }
+});
+
+/* ===== COLETA ESTADO ATUAL ===== */
+function collectState() {
+  const tables = [];
+  document.querySelectorAll('.pont-card').forEach((card) => {
+    const rows = [];
+    card.querySelectorAll('tbody tr').forEach((tr) => {
+      const inputs = tr.querySelectorAll('input');
+      rows.push([inputs[0].value, inputs[1].value, inputs[2].value]);
+    });
+    tables.push(rows);
+  });
+  return { tables, grupos: window._currentGrupos };
+}
+
+/* ===== APLICA ESTADO ===== */
+function applyState(state, broadcast) {
+  if (!state || !state.tables) return;
+  const cards = document.querySelectorAll('.pont-card');
+  state.tables.forEach((rows, gi) => {
+    const card = cards[gi];
+    if (!card) return;
+    const trs = card.querySelectorAll('tbody tr');
+    rows.forEach((vals, ri) => {
+      const tr = trs[ri];
+      if (!tr) return;
+      const inputs = tr.querySelectorAll('input');
+      inputs[0].value = vals[0];
+      inputs[1].value = vals[1];
+      inputs[2].value = vals[2];
+      calcPts(inputs[0]);
+    });
+  });
+  if (broadcast) broadcastState();
+}
+
+/* ===== BLOQUEIO DE INPUTS ===== */
+function setInputsLocked(locked) {
+  document.querySelectorAll('.input-pts').forEach(inp => {
+    inp.disabled = locked;
+    inp.style.cursor = locked ? 'not-allowed' : '';
+    inp.style.opacity = locked ? '0.45' : '';
+  });
+}
+
+/* ===== MODAL DE SENHA ===== */
+function showPasswordModal() {
+  // Remove modal anterior se existir
+  const old = document.getElementById('admin-modal');
+  if (old) old.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'admin-modal';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,0.82);
+    display:flex;align-items:center;justify-content:center;
+    backdrop-filter:blur(4px);
+  `;
+
+  overlay.innerHTML = `
+    <div style="
+      background:var(--panel);
+      border:1px solid var(--border-b);
+      padding:28px 32px 24px;
+      clip-path:polygon(12px 0%,calc(100% - 12px) 0%,100% 50%,calc(100% - 12px) 100%,12px 100%,0% 50%);
+      text-align:center;
+      min-width:280px;
+      box-shadow:0 0 40px rgba(204,34,34,0.3);
+    ">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:5px;color:var(--accent2);margin-bottom:4px;">ACESSO ADMIN</div>
+      <div style="font-size:12px;color:var(--text2);letter-spacing:2px;margin-bottom:18px;">INSIRA A SENHA PARA EDITAR</div>
+      <input id="admin-pwd-input" type="password" placeholder="••••••••"
+        style="
+          font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+          background:var(--bg2);border:1px solid var(--border);border-radius:2px;
+          color:var(--text);text-align:center;padding:8px 14px;width:100%;
+          outline:none;letter-spacing:4px;margin-bottom:12px;
+        "
+      >
+      <div id="admin-pwd-err" style="color:var(--accent);font-size:11px;letter-spacing:2px;min-height:16px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;">
+        <button id="admin-cancel-btn" style="
+          font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;
+          text-transform:uppercase;padding:7px 20px;border:1px solid var(--border);
+          background:var(--panel2);color:var(--text2);cursor:pointer;
+          clip-path:polygon(6px 0%,calc(100% - 6px) 0%,100% 50%,calc(100% - 6px) 100%,6px 100%,0% 50%);
+        ">Cancelar</button>
+        <button id="admin-ok-btn" style="
+          font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:2px;
+          text-transform:uppercase;padding:7px 20px;border:1px solid var(--border-b);
+          background:var(--accent);color:#fff;cursor:pointer;
+          clip-path:polygon(6px 0%,calc(100% - 6px) 0%,100% 50%,calc(100% - 6px) 100%,6px 100%,0% 50%);
+        ">Entrar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  const input = document.getElementById('admin-pwd-input');
+  const err   = document.getElementById('admin-pwd-err');
+  input.focus();
+
+  const tryLogin = () => {
+    if (input.value === ADMIN_PASSWORD) {
+      isAdmin = true;
+      overlay.remove();
+      setInputsLocked(false);
+      updateAdminButton();
+    } else {
+      err.textContent = '✖ SENHA INCORRETA';
+      input.value = '';
+      input.focus();
+    }
+  };
+
+  document.getElementById('admin-ok-btn').addEventListener('click', tryLogin);
+  document.getElementById('admin-cancel-btn').addEventListener('click', () => overlay.remove());
+  input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
+}
+
+function updateAdminButton() {
+  const btn = document.getElementById('btn-admin');
+  if (!btn) return;
+  if (isAdmin) {
+    btn.textContent = '🔓 Admin';
+    btn.style.borderColor = 'var(--gB)';
+    btn.style.color = '#44dd88';
+  } else {
+    btn.textContent = '🔒 Admin';
+    btn.style.borderColor = '';
+    btn.style.color = '';
+  }
+}
+
 /* ===================================================
    UTILIDADES
    =================================================== */
@@ -41,10 +207,17 @@ function sortear() {
     eq.slice(6, 9),
     eq.slice(9, 12),
   ];
+  window._currentGrupos = grupos;
   renderGrupos(grupos);
   renderPontuacao(grupos);
   renderMata(grupos);
   renderClassificacao();
+  setInputsLocked(!isAdmin);
+  /* Tenta restaurar estado salvo do localStorage */
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) applyState(JSON.parse(saved), false);
+  } catch(e) {}
 }
 
 /* ===================================================
@@ -185,8 +358,9 @@ function renderPontuacao(grupos) {
  * Recalcula pontos (V × 3) e reordena as linhas do grupo por pontuação.
  * Chamado via oninput inline nos inputs gerados.
  * @param {HTMLInputElement} input
+ * @param {boolean} [skipBroadcast] - se true, não propaga (evita loop)
  */
-function calcPts(input) {
+function calcPts(input, skipBroadcast) {
   const tr       = input.closest('tr');
   const tbody    = tr.parentElement;
   const pontCard = tr.closest('.pont-card');
@@ -233,6 +407,9 @@ function calcPts(input) {
       }
     });
   }
+
+  /* Propaga para outras abas/dispositivos (apenas quando chamado pelo admin) */
+  if (!skipBroadcast) broadcastState();
 }
 
 /* ===================================================
@@ -431,8 +608,8 @@ function renderMata(grupos) {
   /* ── Campeão (uma única linha — vencedor da final) ── */
   const campWrap = document.createElement('div');
   const campBox  = document.createElement('div');
-  campBox.className = 'match-box final-box';
-  campBox.appendChild(makeTeam('Vencedor da Final', 'tX', true));
+  campBox.className = 'match-box final-box camp-box';
+  campBox.appendChild(makeTeam('Vencedor da Final', 'tGold', true));
   campWrap.appendChild(campBox);
   mm.appendChild(makeRound('Campeão', [campWrap]));
 }
@@ -486,10 +663,24 @@ function renderClassificacao() {
    INICIALIZAÇÃO
    =================================================== */
 
-// Botão de sorteio
+// Botão de sorteio + botão admin
 document.addEventListener('DOMContentLoaded', () => {
   const btnSortear = document.getElementById('btn-sortear');
   if (btnSortear) btnSortear.addEventListener('click', sortear);
+
+  const btnAdmin = document.getElementById('btn-admin');
+  if (btnAdmin) {
+    btnAdmin.addEventListener('click', () => {
+      if (isAdmin) {
+        /* Logout */
+        isAdmin = false;
+        setInputsLocked(true);
+        updateAdminButton();
+      } else {
+        showPasswordModal();
+      }
+    });
+  }
 
   // Primeiro sorteio automático
   sortear();

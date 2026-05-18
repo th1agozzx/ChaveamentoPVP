@@ -523,10 +523,10 @@ body::after {
   font-size: 11px;
   table-layout: fixed;
 }
-/* Equipe=auto, J/V/D=28px each, Pts=44px */
+/* Equipe=auto, J/V/D=36px each, Pts=48px */
 .pont-table col.col-eq  { width: auto; }
-.pont-table col.col-num { width: 28px; }
-.pont-table col.col-pts { width: 44px; }
+.pont-table col.col-num { width: 36px; }
+.pont-table col.col-pts { width: 48px; }
 
 .pont-table th {
   padding: 5px 2px;
@@ -574,21 +574,22 @@ body::after {
 
 .input-pts {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 600;
   width: 100%;
-  max-width: 38px;
+  max-width: 46px;
   background: var(--bg2);
   border: 1px solid var(--border);
   color: var(--text);
   text-align: center;
-  padding: 2px 1px;
+  padding: 5px 2px;
   border-radius: 2px;
   outline: none;
   transition: border-color .15s;
   box-sizing: border-box;
 }
 .input-pts:focus { border-color: var(--accent); box-shadow: 0 0 6px var(--glow-r); }
+.input-pts:disabled { cursor: not-allowed; opacity: 0.45; }
 
 /* ===== MATA-MATA ===== */
 .mata-mata {
@@ -642,15 +643,23 @@ body::after {
   letter-spacing: .3px;
   border-bottom: 1px solid var(--border);
   gap: 6px;
-  min-height: 31px;
+  min-height: 34px;
 }
 .match-team:last-child { border-bottom: none; }
+.final-box .match-team { border-bottom: 1px solid var(--gold); opacity: 1; }
+.final-box .match-team:last-child { border-bottom: none; }
 .match-team.tA { border-left: 3px solid var(--gA); }
 .match-team.tB { border-left: 3px solid var(--gB); }
 .match-team.tC { border-left: 3px solid var(--gC); }
 .match-team.tD { border-left: 3px solid var(--gD); }
 .match-team.tX { border-left: 3px solid var(--border); color: var(--text3); font-style: italic; }
+.match-team.tGold { border-left: 3px solid var(--gold2); color: var(--gold2); font-style: italic; }
 .match-team-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.camp-box {
+  border-color: var(--gold2) !important;
+  box-shadow: 0 0 24px rgba(255,208,96,0.35) !important;
+}
 
 .md3-tag {
   font-family: 'Rajdhani', sans-serif;
