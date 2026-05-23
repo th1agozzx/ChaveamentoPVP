@@ -4,7 +4,7 @@
    =================================================== */
 
 /* ===== DADOS ===== */
-const EQUIPES = Array.from({ length: 6 }, (_, i) => 'Equipe ' + (i + 1));
+const EQUIPES = Array.from({ length: 12 }, (_, i) => 'Equipe ' + (i + 1));
 const CORES  = ['gA', 'gB', 'gC', 'gD'];
 const NOMES  = ['A', 'B', 'C', 'D'];
 
@@ -235,8 +235,10 @@ function shuffle(arr) {
 function sortear() {
   const eq = shuffle(EQUIPES);
   const grupos = [
-    eq.slice(0, 3), // Grupo A
-    eq.slice(3, 6), // Grupo B
+    eq.slice(0, 3),
+    eq.slice(3, 6),
+    eq.slice(6, 9),
+    eq.slice(9, 12),
   ];
   window._currentGrupos = grupos;
   renderGrupos(grupos);
@@ -607,14 +609,21 @@ function renderMata(grupos) {
   const mm = document.getElementById('mata-mata');
   mm.innerHTML = '';
 
-  /* Semifinal direto — sem quartas */
-const sMatches = [
-  makeMatch('1º Grupo A', 'tA', '2º Grupo B', 'tB'),
-  makeMatch('1º Grupo B', 'tB', '2º Grupo A', 'tA'),
-];
+  /* ── Quartas de Final ── (labels fixos — times vêm dos grupos) */
+  const qMatches = [
+    makeMatch('1º Grupo A', 'tA', '1º Grupo B', 'tB', false, null, 'q1t1', 'q1t2'),
+    makeMatch('2º Grupo A', 'tB', '2º Grupo B', 'tA', false, null, 'q2t1', 'q2t2'),
+    makeMatch('1º Grupo C', 'tC', '1º Grupo D', 'tD', false, null, 'q3t1', 'q3t2'),
+    makeMatch('2º Grupo C', 'tD', '2º Grupo D', 'tC', false, null, 'q4t1', 'q4t2'),
+  ];
   mm.appendChild(makeRound('Quartas de Final', qMatches));
   mm.appendChild(makeConn(4, 2));
 
+  /* ── Semifinal ── */
+  const sMatches = [
+    makeMatch('Venc. Q1', 'tX', 'Venc. Q2', 'tX', false, null, 's1t1', 's1t2'),
+    makeMatch('Perd. Q3', 'tX', 'Perd. Q4', 'tX', false, null, 's2t1', 's2t2'),
+  ];
   const semiCol = makeRound('Semifinal', sMatches);
   const semiNote = document.createElement('div');
   semiNote.style.cssText = 'font-size:9px;letter-spacing:1.5px;color:var(--bronze);text-align:center;margin-top:-12px;margin-bottom:4px;font-family:"Rajdhani",sans-serif;font-weight:700;';
